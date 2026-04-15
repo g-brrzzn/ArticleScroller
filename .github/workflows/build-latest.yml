@@ -10,7 +10,6 @@ permissions:
   contents: write
 
 jobs:
-  # 💻 JOB 1: Build for Windows
   build-windows:
     name: Build Windows App
     runs-on: windows-latest
@@ -24,24 +23,23 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        working-directory: ./frontend
+        working-directory: article-scroller/frontend
         run: flutter pub get
 
       - name: Build executable (Windows)
-        working-directory: ./frontend
+        working-directory: article-scroller/frontend
         run: flutter build windows
 
       - name: Compress Release folder (ZIP)
-        working-directory: ./frontend/build/windows/x64/runner
+        working-directory: article-scroller/frontend/build/windows/x64/runner
         run: Compress-Archive -Path Release\* -DestinationPath ArticleScroller-Windows.zip
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: frontend/build/windows/x64/runner/ArticleScroller-Windows.zip
+          path: article-scroller/frontend/build/windows/x64/runner/ArticleScroller-Windows.zip
 
-  # 📱 JOB 2: Build for Android
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
@@ -49,8 +47,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java (Required for Android)
-        uses: actions/setup-java@v3
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -61,20 +59,19 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        working-directory: ./frontend
+        working-directory: article-scroller/frontend
         run: flutter pub get
 
       - name: Build APK (Android)
-        working-directory: ./frontend
+        working-directory: article-scroller/frontend
         run: flutter build apk --release
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+          path: article-scroller/frontend/build/app/outputs/flutter-apk/app-release.apk
 
-  # 🚀 JOB 3: Merge everything and publish
   create-release:
     name: Publish Release
     needs: [build-windows, build-android] 
@@ -90,7 +87,7 @@ jobs:
         with:
           name: android-build
 
-      - name: Update "Latest" Release
+      - name: Update Latest Release
         uses: ncipollo/release-action@v1
         with:
           tag: "latest"
