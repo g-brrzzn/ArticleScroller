@@ -27,3 +27,28 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+
+# --- Python ---
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/scroller.db
+backend/test.html
+
+# --- Flutter / Dart ---
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/pubspec.lock
+
+# --- VS Code ---
+.vscode/
+*.code-workspace
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+/article-scroller/backend/venv

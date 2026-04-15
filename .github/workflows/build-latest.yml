@@ -1,0 +1,102 @@
+name: Build and Release (Latest)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # 💻 JOB 1: Build for Windows
+  build-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: flutter pub get
+
+      - name: Build executable (Windows)
+        working-directory: ./frontend
+        run: flutter build windows
+
+      - name: Compress Release folder (ZIP)
+        working-directory: ./frontend/build/windows/x64/runner
+        run: Compress-Archive -Path Release\* -DestinationPath ArticleScroller-Windows.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: frontend/build/windows/x64/runner/ArticleScroller-Windows.zip
+
+  # 📱 JOB 2: Build for Android
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java (Required for Android)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: flutter pub get
+
+      - name: Build APK (Android)
+        working-directory: ./frontend
+        run: flutter build apk --release
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+
+  # 🚀 JOB 3: Merge everything and publish
+  create-release:
+    name: Publish Release
+    needs: [build-windows, build-android] 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows Build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          
+      - name: Download Android Build
+        uses: actions/download-artifact@v4
+        with:
+          name: android-build
+
+      - name: Update "Latest" Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: "latest"
+          name: "Latest Build"
+          body: "Latest automated build compiled from the main branch.\n\nIncludes:\n- A `.zip` executable for Windows.\n- An installable `.apk` file for Android."
+          artifacts: "ArticleScroller-Windows.zip,app-release.apk"
+          allowUpdates: true
+          replacesArtifacts: true
+          makeLatest: true
