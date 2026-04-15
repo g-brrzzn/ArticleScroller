@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:share_plus/share_plus.dart'; // 🟢 Import do pacote de share
+import 'package:share_plus/share_plus.dart';
+import '../services/arxiv_service.dart';
+import '../services/database_service.dart';
 import '../main.dart'; 
 
 class TopScreen extends StatefulWidget {
@@ -12,23 +12,23 @@ class TopScreen extends StatefulWidget {
 }
 
 class _TopScreenState extends State<TopScreen> {
-  List<dynamic> _topArticles = [];
-  bool _isLoading = true;
-  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> topArticles = [];
+  bool isLoading = true;
+  final TextEditingController searchController = TextEditingController();
 
-  String _selectedCategory = 'Todas';
-  String _selectedTimeframe = 'month';
+  String selectedCategory = 'Todas';
+  String selectedTimeframe = 'month';
 
-  List<String> _activeCategories = ['Todas', 'Inteligência Artificial', 'Ciência da Computação'];
+  List<String> activeCategories = ['Todas', 'Inteligência Artificial', 'Ciência da Computação'];
 
-  final List<String> _allAvailableCategories = [
+  final List<String> allAvailableCategories = [
     'Inteligência Artificial', 'Ciência da Computação', 'Engenharia de Software',
     'Criptografia e Segurança', 'Física Geral', 'Astrofísica', 'Matemática',
     'Biologia Quantitativa', 'Neurociência', 'Genética e Genômica',
     'Longevidade e Biologia Celular', 'Economia'
   ];
   
-  final Map<String, String> _timeframes = {
+  final Map<String, String> timeframes = {
     'Semana': 'week', 'Mês': 'month', 'Ano': 'year',
     '3 Anos': '3years', '5 Anos': '5years', 'Sempre': 'all'
   };
@@ -36,48 +36,47 @@ class _TopScreenState extends State<TopScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchTopArticles();
+    fetchTopArticles();
   }
 
-  Future<void> _fetchTopArticles() async {
-    setState(() => _isLoading = true);
-    final String queryText = _searchController.text.trim();
+  Future<void> fetchTopArticles() async {
+    setState(() => isLoading = true);
+    final String queryText = searchController.text.trim();
+    
     try {
-      final url = Uri.parse(
-          'http://localhost:8000/api/top?category=$_selectedCategory&timeframe=$_selectedTimeframe&q=$queryText');
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        setState(() {
-          _topArticles = json.decode(utf8.decode(response.bodyBytes));
-          _isLoading = false;
-        });
-      }
+      final results = await ArxivService.fetchTopArticles(
+        selectedCategory,
+        selectedTimeframe,
+        queryText
+      );
+      setState(() {
+        topArticles = results;
+        isLoading = false;
+      });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() => isLoading = false);
     }
   }
 
-  // 🟢 Lógica de Salvar (Conversa com o Backend)
-  Future<void> _toggleLike(int index) async {
-    final article = _topArticles[index];
+  Future<void> toggleLike(int index) async {
+    final article = topArticles[index];
     final int articleId = article['id'];
-    final bool isCurrentlySaved = article['is_saved'] == 1;
+    final int currentStatus = article['is_saved'];
 
     setState(() {
-      _topArticles[index]['is_saved'] = isCurrentlySaved ? 0 : 1;
+      topArticles[index]['is_saved'] = currentStatus == 1 ? 0 : 1;
     });
 
     try {
-      await http.post(Uri.parse('http://localhost:8000/api/articles/$articleId/toggle-save'));
+      await DatabaseService.instance.toggleSave(articleId, currentStatus);
     } catch (e) {
       setState(() {
-        _topArticles[index]['is_saved'] = isCurrentlySaved ? 1 : 0;
+        topArticles[index]['is_saved'] = currentStatus;
       });
     }
   }
 
-  // 🟢 Lógica de Compartilhar
-  void _shareArticle(Map<dynamic, dynamic> article) {
+  void shareArticle(Map<dynamic, dynamic> article) {
     final String text = 
       'Confira este artigo no Article Scroller:\n\n'
       '${article['title']}\n'
@@ -87,15 +86,17 @@ class _TopScreenState extends State<TopScreen> {
     Share.share(text);
   }
 
-  String _formatDate(String? isoDate) {
-    if (isoDate == null || isoDate.isEmpty) return 'Data desconhecida';
+  String formatDate(String? isoDate) {
+    if (isoDate == null || isoDate.isEmpty) return 'Unknown date';
     try {
       final DateTime date = DateTime.parse(isoDate);
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-    } catch (e) { return 'Data inválida'; }
+    } catch (e) { 
+      return 'Invalid date'; 
+    }
   }
 
-  void _showCategoryManager() {
+  void showCategoryManager() {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -105,13 +106,13 @@ class _TopScreenState extends State<TopScreen> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: _allAvailableCategories.map((cat) => CheckboxListTile(
+              children: allAvailableCategories.map((cat) => CheckboxListTile(
                 title: Text(cat, style: const TextStyle(color: Colors.white70)),
-                value: _activeCategories.contains(cat),
+                value: activeCategories.contains(cat),
                 activeColor: Colors.deepPurpleAccent,
                 onChanged: (val) {
                   setDialogState(() {
-                    val == true ? _activeCategories.add(cat) : _activeCategories.remove(cat);
+                    val == true ? activeCategories.add(cat) : activeCategories.remove(cat);
                   });
                 },
               )).toList(),
@@ -119,7 +120,11 @@ class _TopScreenState extends State<TopScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () { Navigator.pop(context); setState(() {}); _fetchTopArticles(); },
+              onPressed: () { 
+                Navigator.pop(context); 
+                setState(() {}); 
+                fetchTopArticles(); 
+              },
               child: const Text('Concluído', style: TextStyle(color: Colors.deepPurpleAccent)),
             )
           ],
@@ -138,7 +143,7 @@ class _TopScreenState extends State<TopScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
-              controller: _searchController,
+              controller: searchController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Pesquisar...',
@@ -147,7 +152,7 @@ class _TopScreenState extends State<TopScreen> {
                 fillColor: Colors.grey[900],
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
-              onSubmitted: (_) => _fetchTopArticles(),
+              onSubmitted: (_) => fetchTopArticles(),
             ),
           ),
           SingleChildScrollView(
@@ -155,15 +160,15 @@ class _TopScreenState extends State<TopScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                ..._activeCategories.map((cat) => Padding(
+                ...activeCategories.map((cat) => Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     label: Text(cat),
-                    selected: _selectedCategory == cat,
-                    onSelected: (val) { if (val) { setState(() => _selectedCategory = cat); _fetchTopArticles(); } },
+                    selected: selectedCategory == cat,
+                    onSelected: (val) { if (val) { setState(() => selectedCategory = cat); fetchTopArticles(); } },
                   ),
                 )),
-                ActionChip(avatar: const Icon(Icons.add, size: 18), label: const Text('Tópicos'), onPressed: _showCategoryManager),
+                ActionChip(avatar: const Icon(Icons.add, size: 18), label: const Text('Tópicos'), onPressed: showCategoryManager),
               ],
             ),
           ),
@@ -172,24 +177,24 @@ class _TopScreenState extends State<TopScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
-              children: _timeframes.entries.map((e) => Padding(
+              children: timeframes.entries.map((e) => Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
                   label: Text(e.key, style: const TextStyle(fontSize: 12)),
-                  selected: _selectedTimeframe == e.value,
-                  onSelected: (val) { if (val) { setState(() => _selectedTimeframe = e.value); _fetchTopArticles(); } },
+                  selected: selectedTimeframe == e.value,
+                  onSelected: (val) { if (val) { setState(() => selectedTimeframe = e.value); fetchTopArticles(); } },
                 ),
               )).toList(),
             ),
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: _isLoading
+            child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _topArticles.length,
-                    itemBuilder: (context, index) => _buildArticleCard(context, index),
+                    itemCount: topArticles.length,
+                    itemBuilder: (context, index) => buildArticleCard(context, index),
                   ),
           ),
         ],
@@ -197,11 +202,10 @@ class _TopScreenState extends State<TopScreen> {
     );
   }
 
-  Widget _buildArticleCard(BuildContext context, int index) {
-    final article = _topArticles[index];
+  Widget buildArticleCard(BuildContext context, int index) {
+    final article = topArticles[index];
     final bool isLiked = article['is_saved'] == 1;
 
-    // Extrai a versão da URL de forma segura para não dar crash se for nula
     String version = "v1";
     if (article['source'] != null && article['source'].toString().contains('v')) {
       version = "v${article['source'].toString().split('v').last}";
@@ -218,7 +222,6 @@ class _TopScreenState extends State<TopScreen> {
           children: [
             Row(
               children: [
-                // 🟢 TAG DE TÓPICO/CATEGORIA
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -231,7 +234,6 @@ class _TopScreenState extends State<TopScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // 🟢 TAG DE RANKING
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -244,17 +246,12 @@ class _TopScreenState extends State<TopScreen> {
                   ),
                 ),
                 const Spacer(),
-                // 📅 DATA
-                Text(_formatDate(article['published_date']), style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(formatDate(article['published_date']), style: const TextStyle(color: Colors.white54, fontSize: 12)),
               ],
             ),
             const SizedBox(height: 12),
-            
-            // 📝 TÍTULO
             Text(article['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, height: 1.3)),
             const SizedBox(height: 8),
-            
-            // 👤 AUTOR E VERSÃO
             Row(
               children: [
                 const Icon(Icons.person_outline, size: 14, color: Colors.deepPurpleAccent),
@@ -272,20 +269,17 @@ class _TopScreenState extends State<TopScreen> {
                 ),
               ],
             ),
-            
             const Divider(height: 24, color: Colors.white12),
-            
-            // 🛠️ BOTÕES DE AÇÃO COMPLETOS (Compartilhar, Salvar, Ler)
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
                   icon: const Icon(Icons.share_outlined, color: Colors.white70),
-                  onPressed: () => _shareArticle(article),
+                  onPressed: () => shareArticle(article),
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  onPressed: () => _toggleLike(index),
+                  onPressed: () => toggleLike(index),
                   icon: Icon(isLiked ? Icons.bookmark : Icons.bookmark_border, color: isLiked ? Colors.deepPurpleAccent : Colors.white70),
                   label: Text(isLiked ? 'Salvo' : 'Salvar', style: TextStyle(color: isLiked ? Colors.deepPurpleAccent : Colors.white70)),
                 ),
