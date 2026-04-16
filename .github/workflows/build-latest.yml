@@ -23,22 +23,22 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        working-directory: article-scroller/frontend
+        working-directory: article-scroller
         run: flutter pub get
 
-      - name: Build executable (Windows)
-        working-directory: article-scroller/frontend
+      - name: Build executable
+        working-directory: article-scroller
         run: flutter build windows
 
-      - name: Compress Release folder (ZIP)
-        working-directory: article-scroller/frontend/build/windows/x64/runner
+      - name: Compress Release folder
+        working-directory: article-scroller/build/windows/x64/runner
         run: Compress-Archive -Path Release\* -DestinationPath ArticleScroller-Windows.zip
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: article-scroller/frontend/build/windows/x64/runner/ArticleScroller-Windows.zip
+          path: article-scroller/build/windows/x64/runner/ArticleScroller-Windows.zip
 
   build-android:
     name: Build Android APK
@@ -59,18 +59,18 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        working-directory: article-scroller/frontend
+        working-directory: article-scroller
         run: flutter pub get
 
-      - name: Build APK (Android)
-        working-directory: article-scroller/frontend
+      - name: Build APK
+        working-directory: article-scroller
         run: flutter build apk --release
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: article-scroller/frontend/build/app/outputs/flutter-apk/app-release.apk
+          path: article-scroller/build/app/outputs/flutter-apk/app-release.apk
 
   create-release:
     name: Publish Release
@@ -92,7 +92,7 @@ jobs:
         with:
           tag: "latest"
           name: "Latest Build"
-          body: "Latest automated build compiled from the main branch.\n\nIncludes:\n- A `.zip` executable for Windows.\n- An installable `.apk` file for Android."
+          body: "Latest automated build compiled from the main branch."
           artifacts: "ArticleScroller-Windows.zip,app-release.apk"
           allowUpdates: true
           replacesArtifacts: true
