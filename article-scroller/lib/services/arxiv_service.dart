@@ -16,23 +16,29 @@ class ArxivService {
     }
 
     final Map<String, String> catMap = {
-      "Inteligência Artificial": "cat:cs.AI",
-      "Ciência da Computação": "(cat:cs.CC OR cat:cs.CR OR cat:cs.DC OR cat:cs.SE OR cat:cs.PL)",
-      "Engenharia de Software": "cat:cs.SE",
-      "Criptografia e Segurança": "cat:cs.CR",
-      "Física Geral": "cat:physics.gen-ph",
-      "Astrofísica": "cat:astro-ph",
-      "Matemática": "cat:math.HO",
-      "Economia": "cat:econ.GN",
-      "Biologia Quantitativa": "cat:q-bio",
-      "Neurociência": "cat:q-bio.NC",
-      "Genética e Genômica": "cat:q-bio.GN",
-      "Longevidade e Biologia Celular": "(cat:q-bio.CB OR cat:q-bio.MN)"
+      "Artificial Intelligence": "cat:cs.AI",
+      "Computer Science": "(cat:cs.CC OR cat:cs.CR OR cat:cs.DC OR cat:cs.SE OR cat:cs.PL)",
+      "Software Engineering": "cat:cs.SE",
+      "Cryptography and Security": "cat:cs.CR",
+      "General Physics": "cat:physics.gen-ph",
+      "Astrophysics": "cat:astro-ph",
+      "Mathematics": "cat:math.HO",
+      "Economics": "cat:econ.GN",
+      "Quantitative Biology": "cat:q-bio",
+      "Neuroscience": "cat:q-bio.NC",
+      "Genetics and Genomics": "cat:q-bio.GN",
+      "Longevity and Cell Biology": "(cat:q-bio.CB OR cat:q-bio.MN)",
+      "Computer Graphics": "cat:cs.GR",
+      "Robotics": "cat:cs.RO",
+      "Quantitative Finance": "cat:q-fin.GN",
+      "Quantum Physics": "cat:quant-ph",
+      "Systems and Control": "cat:eess.SY",
+      "Data Structures and Algorithms": "cat:cs.DS"
     };
 
     if (catMap.containsKey(category)) {
       queryParts.add(catMap[category]!);
-    } else if (category == "Todas" && queryText.trim().isEmpty) {
+    } else if (category == "All" && queryText.trim().isEmpty) {
       queryParts.add("cat:cs.AI");
     }
 
@@ -62,7 +68,7 @@ class ArxivService {
     try {
       final response = await http.get(
         url,
-        headers: {"User-Agent": "ArticleScrollerApp/1.0"}, // 🟢 Nossa Identidade
+        headers: {"User-Agent": "ArticleScrollerApp/1.0"},
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
@@ -100,7 +106,7 @@ class ArxivService {
         }
       }
     } catch (e) {
-      print("Fetch error: $e");
+      // Intentionally suppressed for UI flow
     }
 
     return liveArticles;
@@ -112,7 +118,7 @@ class ArxivService {
     try {
       final response = await http.get(
         Uri.parse(fullUrl),
-        headers: {"User-Agent": "ArticleScrollerApp/1.0"}, 
+        headers: {"User-Agent": "ArticleScrollerApp/1.0"},
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
@@ -130,7 +136,6 @@ class ArxivService {
         return "Ar5iv returned status ${response.statusCode}";
       }
     } catch (e) {
-      print("Extraction error: $e");
       return null;
     }
   }

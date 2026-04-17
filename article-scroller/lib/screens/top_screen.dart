@@ -16,21 +16,23 @@ class _TopScreenState extends State<TopScreen> {
   bool isLoading = true;
   final TextEditingController searchController = TextEditingController();
 
-  String selectedCategory = 'Todas';
+  String selectedCategory = 'All';
   String selectedTimeframe = 'month';
 
-  List<String> activeCategories = ['Todas', 'Inteligência Artificial', 'Ciência da Computação'];
+  List<String> activeCategories = ['All', 'Artificial Intelligence', 'Computer Science', 'Neuroscience', 'Longevity and Cell Biology'];
 
   final List<String> allAvailableCategories = [
-    'Inteligência Artificial', 'Ciência da Computação', 'Engenharia de Software',
-    'Criptografia e Segurança', 'Física Geral', 'Astrofísica', 'Matemática',
-    'Biologia Quantitativa', 'Neurociência', 'Genética e Genômica',
-    'Longevidade e Biologia Celular', 'Economia'
+    'Artificial Intelligence', 'Computer Science', 'Software Engineering',
+    'Cryptography and Security', 'General Physics', 'Astrophysics', 'Mathematics',
+    'Quantitative Biology', 'Neuroscience', 'Genetics and Genomics',
+    'Longevity and Cell Biology', 'Economics', 'Computer Graphics', 
+    'Robotics', 'Quantitative Finance', 'Quantum Physics', 
+    'Systems and Control', 'Data Structures and Algorithms'
   ];
   
   final Map<String, String> timeframes = {
-    'Semana': 'week', 'Mês': 'month', 'Ano': 'year',
-    '3 Anos': '3years', '5 Anos': '5years', 'Sempre': 'all'
+    'Week': 'week', 'Month': 'month', 'Year': 'year',
+    '3 Years': '3years', '5 Years': '5years', 'All Time': 'all'
   };
 
   @override

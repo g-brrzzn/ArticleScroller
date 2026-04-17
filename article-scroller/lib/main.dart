@@ -1,4 +1,4 @@
-import 'dart:io'; 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -14,10 +14,8 @@ void main() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-  
   runApp(const ArticleScrollerApp());
 }
-
 
 class ArticleScrollerApp extends StatelessWidget {
   const ArticleScrollerApp({super.key});
@@ -40,9 +38,6 @@ class ArticleScrollerApp extends StatelessWidget {
   }
 }
 
-
-
-// 🎛️ CONTROLADOR DE ABAS
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -51,42 +46,41 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  int currentIndex = 0;
   
-  final List<Widget> _screens = [
-    const FeedScreen(),    // Índice 0: Feed
-    const TopScreen(),     // Índice 1: Descobrir
-    const SavedScreen()    // Índice 2: Biblioteca
+  final List<Widget> screens = [
+    const FeedScreen(),
+    const TopScreen(),
+    const SavedScreen()
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex, 
-        children: _screens,
+        index: currentIndex, 
+        children: screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         selectedItemColor: Colors.deepPurpleAccent,
         unselectedItemColor: Colors.white54,
-        currentIndex: _currentIndex,
+        currentIndex: currentIndex,
         onTap: (index) {
           setState(() {
-            _currentIndex = index;
+            currentIndex = index;
           });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.swipe_up_rounded), label: 'Feed'),       // Índice 0
-          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Descobrir'),           // Índice 1
-          BottomNavigationBarItem(icon: Icon(Icons.bookmark), label: 'Biblioteca'),         // Índice 2
+          BottomNavigationBarItem(icon: Icon(Icons.swipe_up_rounded), label: 'Feed'),
+          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Discover'),
+          BottomNavigationBarItem(icon: Icon(Icons.bookmark), label: 'Library'),
         ],
       ),
     );
   }
 }
 
-// 📚 TELA DE SALVOS
 class SavedScreen extends StatefulWidget {
   const SavedScreen({super.key});
 
@@ -122,7 +116,7 @@ class _SavedScreenState extends State<SavedScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Biblioteca', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Library', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.black,
       ),
       body: RefreshIndicator(
@@ -134,7 +128,7 @@ class _SavedScreenState extends State<SavedScreen> {
                 ? ListView(
                     children: const [
                       SizedBox(height: 200),
-                      Center(child: Text('Nenhum artigo salvo.', style: TextStyle(color: Colors.white54))),
+                      Center(child: Text('No saved articles.', style: TextStyle(color: Colors.white54))),
                     ],
                   )
                 : ListView.builder(
@@ -204,7 +198,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: Text(isFullMode ? "Artigo Completo" : "Resumo"),
+        title: Text(isFullMode ? "Full Article" : "Abstract"),
         actions: [
           if (isFullMode)
             IconButton(
@@ -240,7 +234,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   minimumSize: const Size(double.infinity, 50),
                 ),
                 icon: const Icon(Icons.auto_stories, color: Colors.white),
-                label: const Text("ATIVAR MODO DE LEITURA COMPLETA"),
+                label: const Text("READ FULL ARTICLE"),
                 onPressed: loadFullArticle,
               ),
             ),
@@ -250,7 +244,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 }
 
-// 📱 TELA DO FEED
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
 
@@ -259,47 +252,73 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  List<Map<String, dynamic>> _articles = [];
-  bool _isLoading = false;
-  final PageController _pageController = PageController();
+  List<Map<String, dynamic>> articles = [];
+  bool isLoading = false;
+  final ScrollController scrollController = ScrollController();
+  
+  final List<String> allCategories = [
+    'Artificial Intelligence', 'Computer Science', 'Software Engineering',
+    'Cryptography and Security', 'General Physics', 'Astrophysics', 'Mathematics',
+    'Quantitative Biology', 'Neuroscience', 'Genetics and Genomics',
+    'Longevity and Cell Biology', 'Economics', 'Computer Graphics', 
+    'Robotics', 'Quantitative Finance', 'Quantum Physics', 
+    'Systems and Control', 'Data Structures and Algorithms'
+  ];
 
   @override
   void initState() {
     super.initState();
-    _fetchFeed();
+    fetchFeed();
+    scrollController.addListener(onScroll);
   }
 
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
 
-  Future<void> _fetchFeed() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
+  void onScroll() {
+    if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 200) {
+      fetchFeed();
+    }
+  }
+
+  Future<void> fetchFeed() async {
+    if (isLoading) return;
+    setState(() => isLoading = true);
 
     try {
-      final newArticles = await ArxivService.fetchTopArticles('Todas', 'month', '');
+      allCategories.shuffle();
+      final selectedCategories = allCategories.take(3).toList();
+      
+      List<Map<String, dynamic>> newArticles = [];
+      
+      for (String category in selectedCategories) {
+        final results = await ArxivService.fetchTopArticles(category, 'week', '');
+        newArticles.addAll(results);
+      }
 
       newArticles.shuffle();
 
       setState(() {
-        _articles.addAll(newArticles);
-        _isLoading = false;
+        articles.addAll(newArticles);
+        isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() => isLoading = false);
     }
   }
 
-
-  Future<void> _toggleLike(int index) async {
-    final article = _articles[index];
+  Future<void> toggleLike(int index) async {
+    final article = articles[index];
     final int currentStatus = article['is_saved'] ?? 0;
 
-
     setState(() {
-      _articles[index]['is_saved'] = currentStatus == 1 ? 0 : 1;
+      articles[index]['is_saved'] = currentStatus == 1 ? 0 : 1;
     });
 
     try {
-
       if (article['id'] == null) {
         await DatabaseService.instance.insertArticle(article);
         final dbData = await DatabaseService.instance.getArticleBySource(article['source']);
@@ -308,113 +327,148 @@ class _FeedScreenState extends State<FeedScreen> {
         }
       }
       
-
       if (article['id'] != null) {
         await DatabaseService.instance.toggleSave(article['id'], currentStatus);
       }
     } catch (e) {
-
       setState(() {
-        _articles[index]['is_saved'] = currentStatus;
+        articles[index]['is_saved'] = currentStatus;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_articles.isEmpty && _isLoading) {
+    if (articles.isEmpty && isLoading) {
       return const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent));
     }
 
-    if (_articles.isEmpty) {
-      return const Center(child: Text("Nenhum artigo encontrado.", style: TextStyle(color: Colors.white54)));
+    if (articles.isEmpty) {
+      return const Center(child: Text("No articles found.", style: TextStyle(color: Colors.white54)));
     }
 
-    return PageView.builder(
-      controller: _pageController,
-      scrollDirection: Axis.vertical,
-      onPageChanged: (index) {
-        if (index == _articles.length - 1) {
-          _fetchFeed(); 
-        }
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          articles.clear();
+        });
+        await fetchFeed();
       },
-      itemCount: _articles.length,
-      itemBuilder: (context, index) {
-        final article = _articles[index];
-        final bool isLiked = (article['is_saved'] == 1);
+      color: Colors.deepPurpleAccent,
+      child: ListView.builder(
+        controller: scrollController,
+        padding: const EdgeInsets.all(16.0),
+        itemCount: articles.length + 1,
+        itemBuilder: (context, index) {
+          if (index == articles.length) {
+            return isLoading 
+                ? const Padding(
+                    padding: EdgeInsets.all(16.0), 
+                    child: Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
+                  ) 
+                : const SizedBox.shrink();
+          }
 
-        return Stack(
-          children: [
+          final article = articles[index];
+          final bool isLiked = (article['is_saved'] == 1);
+          
+          String version = "v1";
+          if (article['source'] != null && article['source'].toString().contains('v')) {
+            version = "v${article['source'].toString().split('v').last}";
+          }
 
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              padding: const EdgeInsets.all(24.0),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.black, Color(0xFF1A1A2E)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: Colors.deepPurpleAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                      child: Text(article['category'].toString().toUpperCase(), style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(article['title'], style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, height: 1.2)),
-                    const SizedBox(height: 16),
-                    Text("👤 ${article['author']}", style: const TextStyle(fontSize: 16, color: Colors.white70)),
-                    const SizedBox(height: 30),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Text(article['content'], style: const TextStyle(fontSize: 18, color: Colors.white60, height: 1.5)),
+          return Card(
+            color: Colors.grey[900],
+            margin: const EdgeInsets.only(bottom: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurpleAccent.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.local_fire_department, color: Colors.deepPurpleAccent, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              article['category'].toString().toUpperCase(),
+                              style: const TextStyle(color: Colors.deepPurpleAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      const Spacer(),
+                      Text(
+                        version,
+                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    article['title'],
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, height: 1.3),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "By ${article['author']}",
+                    style: TextStyle(fontSize: 14, color: Colors.deepPurple[200]),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    article['content'],
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, color: Colors.white70, height: 1.5),
+                  ),
+                  const Divider(height: 24, color: Colors.white12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            iconSize: 24,
+                            icon: Icon(isLiked ? Icons.bookmark : Icons.bookmark_border, color: isLiked ? Colors.deepPurpleAccent : Colors.white54),
+                            onPressed: () => toggleLike(index),
+                          ),
+                          IconButton(
+                            iconSize: 24,
+                            icon: const Icon(Icons.share_outlined, color: Colors.white54),
+                            onPressed: () {
+                              Share.share('Check out this trending article: ${article['title']}\n\nRead here: ${article['source']}');
+                            },
+                          ),
+                        ],
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white10,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ReaderScreen(article: article))),
+                        child: const Text('Read Abstract'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      iconSize: 40,
-                      icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border, color: isLiked ? Colors.redAccent : Colors.white),
-                      onPressed: () => _toggleLike(index),
-                    ),
-                    const SizedBox(height: 20),
-                    IconButton(
-                      iconSize: 40,
-                      icon: const Icon(Icons.menu_book, color: Colors.white),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ReaderScreen(article: article))),
-                    ),
-                    const SizedBox(height: 20),
-                    IconButton(
-                      iconSize: 40,
-                      icon: const Icon(Icons.share_rounded, color: Colors.white),
-                      onPressed: () {
-                        Share.share('Olha este artigo no Article Scroller: ${article['title']}\n\nLeia aqui: ${article['source']}');
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
