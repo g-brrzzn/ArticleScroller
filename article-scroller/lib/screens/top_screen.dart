@@ -104,7 +104,7 @@ class _TopScreenState extends State<TopScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: Colors.grey[900],
-          title: const Text('Seus Tópicos', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: const Text('Your Topics', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -127,7 +127,7 @@ class _TopScreenState extends State<TopScreen> {
                 setState(() {}); 
                 fetchTopArticles(); 
               },
-              child: const Text('Concluído', style: TextStyle(color: Colors.deepPurpleAccent)),
+              child: const Text('Ok', style: TextStyle(color: Colors.deepPurpleAccent)),
             )
           ],
         ),
@@ -139,7 +139,7 @@ class _TopScreenState extends State<TopScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Descobrir', style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.black, elevation: 0),
+      appBar: AppBar(title: const Text('Discover', style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: Colors.black, elevation: 0),
       body: Column(
         children: [
           Padding(
@@ -148,7 +148,7 @@ class _TopScreenState extends State<TopScreen> {
               controller: searchController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Pesquisar...',
+                hintText: 'Search...',
                 prefixIcon: const Icon(Icons.search, color: Colors.white54),
                 filled: true,
                 fillColor: Colors.grey[900],
@@ -170,7 +170,7 @@ class _TopScreenState extends State<TopScreen> {
                     onSelected: (val) { if (val) { setState(() => selectedCategory = cat); fetchTopArticles(); } },
                   ),
                 )),
-                ActionChip(avatar: const Icon(Icons.add, size: 18), label: const Text('Tópicos'), onPressed: showCategoryManager),
+                ActionChip(avatar: const Icon(Icons.add, size: 18), label: const Text('Topics'), onPressed: showCategoryManager),
               ],
             ),
           ),
@@ -283,13 +283,13 @@ class _TopScreenState extends State<TopScreen> {
                 TextButton.icon(
                   onPressed: () => toggleLike(index),
                   icon: Icon(isLiked ? Icons.bookmark : Icons.bookmark_border, color: isLiked ? Colors.deepPurpleAccent : Colors.white70),
-                  label: Text(isLiked ? 'Salvo' : 'Salvar', style: TextStyle(color: isLiked ? Colors.deepPurpleAccent : Colors.white70)),
+                  label: Text(isLiked ? 'Saved' : 'Save', style: TextStyle(color: isLiked ? Colors.deepPurpleAccent : Colors.white70)),
                 ),
                 const Spacer(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurpleAccent),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ReaderScreen(article: article))),
-                  child: const Text('Ler'),
+                  child: const Text('Read'),
                 ),
               ],
             )
