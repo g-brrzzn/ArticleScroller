@@ -70,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: article-scroller/build/app/outputs/flutter-apk/app-release.apk
+          path: article-scroller/build/app/outputs/flutter-apk/article-scroller.apk
 
   create-release:
     name: Publish Release
@@ -93,7 +93,7 @@ jobs:
           tag: "latest"
           name: "Latest Build"
           body: "Latest automated build compiled from the main branch."
-          artifacts: "ArticleScroller-Windows.zip,app-release.apk"
+          artifacts: "ArticleScroller-Windows.zip,article-scroller.apk"
           allowUpdates: true
           replacesArtifacts: true
           makeLatest: true
