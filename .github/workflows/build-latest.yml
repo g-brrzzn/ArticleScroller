@@ -66,6 +66,10 @@ jobs:
         working-directory: article-scroller
         run: flutter build apk --release
 
+      - name: Rename APK
+        working-directory: article-scroller
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/article-scroller.apk
+
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
