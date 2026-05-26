@@ -52,3 +52,5 @@ frontend/pubspec.lock
 .DS_Store
 Thumbs.db
 /article-scroller/backend/venv
+code2text.py
+code2text_output.txt

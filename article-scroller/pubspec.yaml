@@ -42,6 +42,9 @@ dependencies:
   xml: ^6.6.1
   html: ^0.15.6
   sqflite_common_ffi: ^2.4.0+2
+  translator: ^1.0.4+1
+  google_generative_ai: ^0.4.7
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

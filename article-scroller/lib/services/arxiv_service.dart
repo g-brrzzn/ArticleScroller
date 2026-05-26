@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -104,9 +106,15 @@ class ArxivService {
             liveArticles.add(articleData);
           }
         }
+      } else if (response.statusCode == 429 || response.statusCode == 403) {
+        throw Exception("Rate limit exceeded. Please wait a few minutes.");
+      } else {
+        throw Exception("Server error: ${response.statusCode}");
       }
-    } catch (e) {
-      // Intentionally suppressed for UI flow
+    } on SocketException {
+      throw Exception("No internet connection.");
+    } on TimeoutException {
+      throw Exception("Connection timed out.");
     }
 
     return liveArticles;
@@ -123,20 +131,22 @@ class ArxivService {
 
       if (response.statusCode == 200) {
         var document = html_parser.parse(response.body);
-
         document.querySelectorAll('script, style, nav, footer, header').forEach((element) => element.remove());
-
         var contentNode = document.querySelector('article') ?? document.querySelector('main') ?? document.querySelector('body');
 
         if (contentNode != null) {
           return contentNode.text.trim();
         }
-        return "Content structure not recognized.";
+        throw Exception("Content structure not recognized.");
+      } else if (response.statusCode == 429 || response.statusCode == 403) {
+        throw Exception("Rate limit exceeded. Please wait a few minutes.");
       } else {
-        return "Ar5iv returned status ${response.statusCode}";
+        throw Exception("Ar5iv server error: ${response.statusCode}");
       }
-    } catch (e) {
-      return null;
+    } on SocketException {
+      throw Exception("No internet connection.");
+    } on TimeoutException {
+      throw Exception("Connection timed out.");
     }
   }
 }

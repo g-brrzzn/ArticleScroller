@@ -13,7 +13,7 @@ class TopScreen extends StatefulWidget {
 
 class _TopScreenState extends State<TopScreen> {
   List<Map<String, dynamic>> topArticles = [];
-  bool isLoading = true;
+  bool isLoading = false;
   final TextEditingController searchController = TextEditingController();
 
   String selectedCategory = 'All';
@@ -42,6 +42,8 @@ class _TopScreenState extends State<TopScreen> {
   }
 
   Future<void> fetchTopArticles() async {
+    if (isLoading) return;
+    
     setState(() => isLoading = true);
     final String queryText = searchController.text.trim();
     
@@ -56,6 +58,14 @@ class _TopScreenState extends State<TopScreen> {
         isLoading = false;
       });
     } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll("Exception: ", "")),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
       setState(() => isLoading = false);
     }
   }
@@ -80,10 +90,10 @@ class _TopScreenState extends State<TopScreen> {
 
   void shareArticle(Map<dynamic, dynamic> article) {
     final String text = 
-      'Confira este artigo no Article Scroller:\n\n'
+      'Check out this article:\n\n'
       '${article['title']}\n'
-      'Autor: ${article['author']}\n\n'
-      'Leia mais em: ${article['source']}';
+      'Author: ${article['author']}\n\n'
+      'Read here: ${article['source']}';
     
     Share.share(text);
   }
@@ -192,7 +202,7 @@ class _TopScreenState extends State<TopScreen> {
           const SizedBox(height: 16),
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: topArticles.length,
