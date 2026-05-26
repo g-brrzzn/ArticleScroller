@@ -38,10 +38,82 @@ class ArxivService {
       "Data Structures and Algorithms": "cat:cs.DS"
     };
 
+    final Map<String, String> reverseMap = {
+      "cs.AI": "Artificial Intelligence",
+      "cs.AR": "Hardware Architecture",
+      "cs.CC": "Computational Complexity",
+      "cs.CE": "Computational Engineering",
+      "cs.CG": "Computational Geometry",
+      "cs.CL": "Computation and Language",
+      "cs.CR": "Cryptography and Security",
+      "cs.CV": "Computer Vision",
+      "cs.CY": "Computers and Society",
+      "cs.DB": "Databases",
+      "cs.DC": "Distributed Computing",
+      "cs.DL": "Digital Libraries",
+      "cs.DM": "Discrete Mathematics",
+      "cs.DS": "Data Structures and Algorithms",
+      "cs.ET": "Emerging Technologies",
+      "cs.FL": "Formal Languages",
+      "cs.GL": "General Literature",
+      "cs.GR": "Computer Graphics",
+      "cs.GT": "Computer Science and Game Theory",
+      "cs.HC": "Human-Computer Interaction",
+      "cs.IR": "Information Retrieval",
+      "cs.IT": "Information Theory",
+      "cs.LG": "Machine Learning",
+      "cs.LO": "Logic in Computer Science",
+      "cs.MA": "Multiagent Systems",
+      "cs.MM": "Multimedia",
+      "cs.MS": "Mathematical Software",
+      "cs.NA": "Numerical Analysis",
+      "cs.NE": "Neural Computing",
+      "cs.NI": "Networking and Internet",
+      "cs.OH": "Other Computer Science",
+      "cs.OS": "Operating Systems",
+      "cs.PF": "Performance",
+      "cs.PL": "Programming Languages",
+      "cs.RO": "Robotics",
+      "cs.SC": "Symbolic Computation",
+      "cs.SD": "Sound",
+      "cs.SE": "Software Engineering",
+      "cs.SI": "Social and Information Networks",
+      "cs.SY": "Systems and Control",
+      "stat.ML": "Machine Learning (Stat)",
+      "stat.AP": "Applied Statistics",
+      "stat.CO": "Computation",
+      "stat.ME": "Methodology",
+      "stat.TH": "Statistics Theory",
+      "math.HO": "History and Overview",
+      "math.PR": "Probability",
+      "math.ST": "Statistics Theory",
+      "math.CO": "Combinatorics",
+      "math.OC": "Optimization and Control",
+      "q-bio.BM": "Biomolecules",
+      "q-bio.CB": "Cell Biology",
+      "q-bio.GN": "Genomics",
+      "q-bio.MN": "Molecular Networks",
+      "q-bio.NC": "Neuroscience",
+      "q-bio.PE": "Populations and Evolution",
+      "q-bio.QM": "Quantitative Methods",
+      "q-bio.TO": "Tissues and Organs",
+      "physics.gen-ph": "General Physics",
+      "physics.data-an": "Data Analysis",
+      "astro-ph": "Astrophysics",
+      "quant-ph": "Quantum Physics",
+      "eess.AS": "Audio and Speech Processing",
+      "eess.IV": "Image and Video Processing",
+      "eess.SP": "Signal Processing",
+      "eess.SY": "Systems and Control",
+      "econ.EM": "Econometrics",
+      "econ.GN": "General Economics",
+      "econ.TH": "Theoretical Economics",
+    };
+
     if (catMap.containsKey(category)) {
       queryParts.add(catMap[category]!);
     } else if (category == "All" && queryText.trim().isEmpty) {
-      queryParts.add("cat:cs.AI");
+      queryParts.add("all:research");
     }
 
     DateTime now = DateTime.now();
@@ -84,13 +156,23 @@ class ArxivService {
           final sourceUrl = entry.findElements('id').firstOrNull?.innerText ?? '';
           final publishedDate = entry.findElements('published').firstOrNull?.innerText ?? '';
 
+          final categoryNode = entry.findElements('category').firstOrNull;
+          final arxivTag = categoryNode?.getAttribute('term') ?? '';
+          
+          String displayCategory = category;
+          if (arxivTag.isNotEmpty) {
+            displayCategory = reverseMap[arxivTag] ?? arxivTag.toUpperCase();
+          } else if (category == "All") {
+            displayCategory = "RESEARCH";
+          }
+
           if (title.isNotEmpty && summary.isNotEmpty) {
             Map<String, dynamic> articleData = {
               "title": title,
               "author": author,
               "content": summary,
               "source": sourceUrl,
-              "category": category,
+              "category": displayCategory,
               "published_date": publishedDate,
               "is_saved": 0
             };
